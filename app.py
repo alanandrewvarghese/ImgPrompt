@@ -20,17 +20,31 @@ col1, col2, col3= st.columns([1, 4, 4])
 
 with col1:
     st.subheader("Options")
+    
     bg_color_enabled = False
     all_styles_enabled = False
     advanced_expander_enabled = False
     custom_styles_enabled = False
+    aspect_ratio_enabled = False
+    custom_requirements_enabled = False
+    four_k_enabled = False
+    bokeh_effect_enabled = False
+    
     generate_photorealistic_prompt = st.checkbox("Photorealistic", value=False)
+    
     if not generate_photorealistic_prompt:
-        bg_color_enabled = st.checkbox("Solid background", value=True)
-        advanced_expander_enabled = st.checkbox("Advanced options", value=False)
         custom_styles_enabled = st.checkbox("Enable Styles", value=True)
         if custom_styles_enabled:
-            all_styles_enabled = st.checkbox("Show All styles", value=False)
+            all_styles_enabled = st.checkbox("List All styles", value=False)
+            
+        advanced_expander_enabled = st.checkbox("Advanced options", value=False)
+        
+        if advanced_expander_enabled:
+            bg_color_enabled = st.checkbox("Solid background", value=True)
+            four_k_enabled = st.checkbox("4K", value=True)
+            bokeh_effect_enabled = st.checkbox("Bokeh effect", value=False)
+            aspect_ratio_enabled = st.checkbox("Aspect Ratio", value=False)
+            custom_requirements_enabled = st.checkbox("Extra requirements", value=False)
             
     models = [
         "gemini-2.5-flash-preview-05-20",
@@ -38,7 +52,7 @@ with col1:
         "gemini-2.5-pro-preview-05-06",
     ]
     
-    gemini_models = st.expander("Models", expanded=True)
+    gemini_models = st.expander("Models", expanded=False)
     with gemini_models:
         selected_model = st.selectbox(
             "Select a model",
@@ -77,26 +91,38 @@ with col2:
         # Extract just the style name for later use
         selected_style = style.split(" - ")[-1]
 
-    # Color options in an organized expander
-    if bg_color_enabled:
-        color_expander = st.expander("Color Settings")
-        with color_expander:
-            bg_color = st.color_picker("Background color", "#ffffff")
+            
 
     # Advanced options in an expander
     if advanced_expander_enabled:
         advanced_expander = st.expander("Advanced Options")
         with advanced_expander:
-            extra = st.text_area(
-                "Additional details",
-                placeholder="e.g. High resolution, dramatic lighting, 4K, ultra-detailed",
-                help="Add technical specifications, mood, lighting details, etc.",
-            )
+            if bg_color_enabled:
+                bg_color = st.color_picker("Background color", "#ffffff")
+            if four_k_enabled:
+                st.write("4K resolution is enabled.")
+            else:
+                st.write("4K resolution is disabled.")
+                
+            if bokeh_effect_enabled:
+                st.write("Bokeh effect is enabled.")
+            else:
+                st.write("Bokeh effect is disabled.")
+                
+            if aspect_ratio_enabled:
+                aspect_ratio = st.selectbox(
+                    "Aspect Ratio",
+                    ["Square (1:1)", "Portrait (3:4)", "Landscape (16:9)", "Cinematic (21:9)"],
+                )
+                
+            if custom_requirements_enabled:
+                extra = st.text_area(
+                    "Additional details",
+                    placeholder="e.g. High resolution, dramatic lighting, 4K, ultra-detailed",
+                    help="Add technical specifications, mood, lighting details, etc.",
+                )
 
-            aspect_ratio = st.selectbox(
-                "Aspect Ratio",
-                ["Square (1:1)", "Portrait (3:4)", "Landscape (16:9)", "Cinematic (21:9)"],
-            )
+
 
     # Generate button with visual emphasis
     generate_button = st.button(
@@ -122,9 +148,16 @@ with col3:
                     prompt += f"."
 
                 if advanced_expander_enabled:
-                    prompt += f" Aspect ratio: {aspect_ratio}."
+                    if four_k_enabled:
+                        prompt += " The image should be in 4K resolution."
+                        
+                    if bokeh_effect_enabled:
+                        prompt += " The image should have a bokeh effect."
+                        
+                    if aspect_ratio_enabled:
+                        prompt += f" Aspect ratio: {aspect_ratio}."
 
-                    if extra and extra.strip():
+                    if custom_requirements_enabled and extra and extra.strip():
                         prompt += f" Extra requirements include: {extra.strip()}"
 
             with st.spinner("Generating your enhanced prompt..."):
