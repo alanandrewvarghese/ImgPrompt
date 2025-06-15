@@ -4,6 +4,8 @@ import time
 
 from aistudio import generate
 from utils import format_prompt
+from ai_one import enhance_prompt_one
+
 from image_styles import style_categories, essential_styles
 
 
@@ -136,9 +138,18 @@ with col3:
     if generate_button:
         if not description.strip():
             st.error("⚠️ Please enter an image description.")
-        else:            
+        else:
+            generated_enhanced_prompt_one = None            
             if generate_photorealistic_prompt:
-                prompt = f"create an ultra-realistic photograph of {description.strip()} taken with a Sony α7 III camera using an 85mm lens at an f/1.2 aperture. The image should be in 4K resolution, with a focus on capturing the intricate details of the subject. The lighting should be soft and natural, enhancing the textures and colors of the scene. The background should be blurred to create a bokeh effect, drawing attention to the main subject. The overall composition should evoke a sense of realism and depth, making the viewer feel as if they are part of the scene."
+                with st.spinner("Generating your enhanced prompt (AI One)..."):
+                    try:
+                        generated_prompt_one = json.loads(enhance_prompt_one(prompt=description.strip()))
+                        generated_enhanced_prompt_one = generated_prompt_one.get("enhanced_prompt", "")
+                        st.success("AI one successfully enhanced the prompt!")
+                    except Exception as e:
+                        st.warning(f"AI one failed: {str(e)}")
+                        generated_enhanced_prompt_one = None
+                prompt = f"create an ultra-realistic photograph of {generated_enhanced_prompt_one or description.strip()} taken with a Sony α7 III camera using an 85mm lens at an f/1.2 aperture. The image should be in 4K resolution, with a focus on capturing the intricate details of the subject. The background should be blurred to create a bokeh effect, drawing attention to the main subject. The overall composition should evoke a sense of realism and depth, making the viewer feel as if they are part of the scene."
             else:
                 prompt = f"Generate an image of {description.strip()}, styled as {selected_style}"
                 
@@ -162,8 +173,9 @@ with col3:
 
             with st.spinner("Generating your enhanced prompt..."):
                 try:
+                        
                     system_instructions = """Act as a Prompt Enhancer AI that takes user-input prompts and transforms them into more engaging, detailed, and thought-provoking questions. Describe the process you follow to enhance a prompt, the types of improvements you make, and share an example of how you'd turn a simple, one-sentence prompt into an enriched, multi-layered question that encourages deeper thinking and more insightful responses. Output Format: {explanation: string, generated_prompt_for_generating_image: string}"""
-
+                    # Generate the enhanced prompt using the selected model
                     response = json.loads(
                         generate(system_instructions=system_instructions, prompt=prompt, model=selected_model)
                     )
@@ -175,6 +187,7 @@ with col3:
                     if not generated_prompt:
                         st.error("Failed to generate a prompt. Please try again.")
                     else:
+                        st.success("Prompt generated successfully!")
                         # Display input prompt
                         st.markdown("##### Input Prompt")
                         st.code(prompt, language="markdown")
